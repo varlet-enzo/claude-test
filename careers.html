@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Carrières chez Aetherion Studios : postes ouverts en programmation, art, game design, production, audio et QA." />
+  <meta name="theme-color" content="#06010f" />
+  <title>Carrières — Aetherion Studios</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles/main.css" />
+  <link rel="stylesheet" href="styles/pages.css" />
+</head>
+<body>
+  <main class="page">
+    <div class="page-head">
+      <p class="page-head__tag reveal">Carrières</p>
+      <h1 class="page-head__title reveal" style="--d:.1s">Rejoignez l'aventure</h1>
+      <p class="page-head__sub reveal" style="--d:.2s">
+        Nous recherchons des talents passionnés pour façonner les jeux de demain.
+        Télétravail flexible, projets ambitieux, équipe bienveillante.
+      </p>
+    </div>
+
+    <div class="values">
+      <article class="value-card reveal" data-cursor><div class="value-card__icon">🏡</div><h3>Hybride & flexible</h3><p>Travaillez d'où vous êtes le plus créatif, avec des horaires souples.</p></article>
+      <article class="value-card reveal" style="--d:.1s" data-cursor><div class="value-card__icon">📚</div><h3>Formation continue</h3><p>Budget annuel de formation et temps dédié à la R&D personnelle.</p></article>
+      <article class="value-card reveal" style="--d:.2s" data-cursor><div class="value-card__icon">⚖️</div><h3>Équilibre de vie</h3><p>Pas de crunch. Nous protégeons votre temps et votre santé.</p></article>
+    </div>
+
+    <div class="section-head" style="margin-bottom:1.5rem;">
+      <p class="section-head__tag reveal">Postes ouverts</p>
+      <h2 class="section-head__title reveal" style="--d:.1s">Offres du moment</h2>
+    </div>
+    <div class="jobs" id="jobsList"></div>
+
+    <section class="cta" id="cta">
+      <div class="cta__glow"></div>
+      <div class="cta__inner reveal">
+        <h2 class="cta__title">Candidature spontanée</h2>
+        <p class="cta__sub">Votre profil ne correspond à aucune offre ? Écrivez-nous quand même.</p>
+        <div style="margin-top:2rem;"><a href="contact.html" class="btn btn--primary" data-cursor data-magnetic><span>Nous contacter</span></a></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="data/team.js"></script>
+  <script src="scripts/components.js"></script>
+  <script src="scripts/main.js"></script>
+  <script>
+    (() => {
+      const list = document.getElementById("jobsList");
+      if (!list) return;
+      const jobs = [
+        { title: "Ingénieur·e gameplay C++", dept: "Programmation", type: "CDI", loc: "Hybride", lvl: "Senior" },
+        { title: "Character Artist 3D", dept: "Game Art", type: "CDI", loc: "Sur site", lvl: "Confirmé" },
+        { title: "Level Designer", dept: "Game Design", type: "CDI", loc: "Hybride", lvl: "Confirmé" },
+        { title: "Producteur·rice associé·e", dept: "Production", type: "CDI", loc: "Hybride", lvl: "Confirmé" },
+        { title: "Sound Designer", dept: "Audio", type: "CDD", loc: "Hybride", lvl: "Junior" },
+        { title: "Ingénieur·e QA automatisation", dept: "Qualité & Tests", type: "CDI", loc: "Télétravail", lvl: "Confirmé" },
+        { title: "Ingénieur·e rendu (Vulkan)", dept: "Programmation", type: "CDI", loc: "Sur site", lvl: "Senior" },
+        { title: "Narrative Designer", dept: "Game Design", type: "CDI", loc: "Hybride", lvl: "Senior" },
+      ];
+      list.innerHTML = jobs.map((j) => `
+        <div class="job reveal" data-cursor>
+          <div class="job__info">
+            <h3>${j.title}</h3>
+            <p>${j.dept}</p>
+          </div>
+          <div class="job__meta">
+            <span>${j.type}</span><span>${j.loc}</span><span>${j.lvl}</span>
+            <a href="contact.html" class="btn btn--ghost" data-cursor data-magnetic style="padding:.5rem 1.1rem;"><span>Postuler</span></a>
+          </div>
+        </div>`).join("");
+      window.AETHER && window.AETHER.refresh(list);
+    })();
+  </script>
+</body>
+</html>

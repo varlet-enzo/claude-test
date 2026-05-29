@@ -1,5 +1,5 @@
 /* ============================================================
-   AETHERION STUDIOS — Système de commentaires
+   MAISON BONBON — Système de commentaires
    ------------------------------------------------------------
    Stockage actuel : localStorage (démo, sans serveur).
    La couche "CommentStore" est volontairement ASYNCHRONE :
@@ -104,14 +104,14 @@
     container.classList.add("comments");
     container.innerHTML = `
       <div class="comments__head">
-        <h3 class="comments__title">Commentaires <span class="comments__count" id="cmtCount">0</span></h3>
-        <p class="comments__note">💬 Démo locale : vos commentaires sont enregistrés dans ce navigateur. Soyez respectueux !</p>
+        <h3 class="comments__title">Avis gourmands <span class="comments__count" id="cmtCount">0</span></h3>
+        <p class="comments__note">🍓 Démo locale : vos avis sont enregistrés dans ce navigateur. Régalez-vous et restez bienveillant !</p>
       </div>
       <form class="comments__form" id="cmtForm">
         <div class="comments__row">
-          <input type="text" id="cmtName" maxlength="40" placeholder="Votre pseudo" aria-label="Pseudo" required />
+          <input type="text" id="cmtName" maxlength="40" placeholder="Votre prénom" aria-label="Prénom" required />
         </div>
-        <textarea id="cmtText" maxlength="1000" rows="3" placeholder="Partagez votre avis sur ce jeu…" aria-label="Commentaire" required></textarea>
+        <textarea id="cmtText" maxlength="1000" rows="3" placeholder="Partagez votre avis sur cette pâtisserie…" aria-label="Avis" required></textarea>
         <div class="comments__actions">
           <span class="comments__hint" id="cmtHint">0 / 1000</span>
           <button type="submit" class="btn btn--primary" data-cursor data-magnetic><span>Publier</span></button>
@@ -137,7 +137,7 @@
       const items = await CommentStore.list(threadId);
       countEl.textContent = items.length;
       if (!items.length) {
-        listEl.innerHTML = `<p class="comments__empty">Aucun commentaire pour l'instant. Soyez le premier à réagir ! ✦</p>`;
+        listEl.innerHTML = `<p class="comments__empty">Aucun avis pour l'instant. Soyez le premier à vous régaler ! 🧁</p>`;
         return;
       }
       listEl.innerHTML = items
@@ -175,7 +175,7 @@
       await CommentStore.add(threadId, { name, text });
       textI.value = ""; hint.textContent = "0 / 1000";
       await render();
-      window.AETHER && window.AETHER.flash("✦ Commentaire publié !");
+      window.AETHER && window.AETHER.flash("🧁 Merci pour votre avis !");
     });
 
     listEl.addEventListener("click", async (e) => {

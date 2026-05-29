@@ -1,5 +1,5 @@
 /* ============================================================
-   AETHERION STUDIOS — Catalogue de jeux (filtres + recherche)
+   MAISON BONBON — Carte des pâtisseries (filtres + recherche)
    ============================================================ */
 (() => {
   "use strict";
@@ -42,7 +42,7 @@
     return `
       <a class="game-card reveal" href="game.html?id=${g.id}" data-cursor data-tilt style="--hue:${g.hue}">
         <div class="game-card__media">
-          ${g.flagship ? '<span class="game-card__flag">Phare</span>' : ""}
+          ${g.flagship ? '<span class="game-card__flag">Signature</span>' : ""}
           <span class="game-card__status game-card__status--${slug(g.status)}">${g.status}</span>
         </div>
         <div class="game-card__body">
@@ -52,7 +52,7 @@
           </div>
           <div class="game-card__genres">${g.genres.map((x) => `<span>${x}</span>`).join("")}</div>
           <p class="game-card__syn">${g.tagline}</p>
-          <span class="game-card__year">${g.year} · ${g.platforms.slice(0, 2).join(", ")}${g.platforms.length > 2 ? "…" : ""}</span>
+          <span class="game-card__year">${g.price} · ${g.platforms.slice(0, 2).join(", ")}</span>
         </div>
       </a>`;
   }
@@ -74,7 +74,7 @@
     if (countEl) countEl.textContent = filtered.length;
     grid.innerHTML = filtered.length
       ? filtered.map(card).join("")
-      : `<p class="games-empty">Aucun jeu ne correspond à votre recherche. 🔍</p>`;
+      : `<p class="games-empty">Aucune pâtisserie ne correspond à votre recherche. 🔍</p>`;
     window.AETHER && window.AETHER.refresh(grid);
   }
 

@@ -1,15 +1,15 @@
 /* ============================================================
-   AETHERION STUDIOS — Accueil : jeux phares + secteurs
+   MAISON BONBON — Accueil : douceurs phares + ateliers
    ============================================================ */
 (() => {
   "use strict";
 
-  /* Jeux mis en avant */
+  /* Douceurs mises en avant */
   const grid = document.getElementById("homeGames");
   if (grid && window.GAMES) {
     const featured = [
-      window.GAMES.find((g) => g.flagship),
-      ...window.GAMES.filter((g) => !g.flagship && g.rating >= 9).slice(0, 5),
+      ...window.GAMES.filter((g) => g.flagship),
+      ...window.GAMES.filter((g) => !g.flagship && g.rating >= 4.7),
     ].filter(Boolean).slice(0, 6);
 
     grid.innerHTML = featured
@@ -17,11 +17,11 @@
         (g) => `
       <a class="game-card reveal" href="game.html?id=${g.id}" data-cursor data-tilt style="--hue:${g.hue}">
         <div class="game-card__media">
-          ${g.flagship ? '<span class="game-card__flag">Phare</span>' : ""}
-          ${g.rating > 0 ? `<span class="game-card__status game-card__status--sorti">★ ${g.rating.toFixed(1)}</span>` : ""}
+          ${g.flagship ? '<span class="game-card__flag">Signature</span>' : ""}
+          ${g.rating > 0 ? `<span class="game-card__status game-card__status--disponible">★ ${g.rating.toFixed(1)}</span>` : ""}
         </div>
         <div class="game-card__body">
-          <div class="game-card__top"><h3>${g.title}</h3></div>
+          <div class="game-card__top"><h3>${g.title}</h3><span class="game-card__rating">${g.price}</span></div>
           <div class="game-card__genres">${g.genres.map((x) => `<span>${x}</span>`).join("")}</div>
           <p class="game-card__syn">${g.tagline}</p>
         </div>
@@ -40,7 +40,7 @@
         <div class="team-card__icon">${d.icon}</div>
         <h3>${d.name}</h3>
         <p>${d.tagline}</p>
-        <span class="team-card__count">${d.profiles.length} membres</span>
+        <span class="team-card__count">${d.profiles.length} artisans →</span>
       </a>`;
     }).join("");
   }

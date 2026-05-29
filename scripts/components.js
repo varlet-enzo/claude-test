@@ -1,5 +1,5 @@
 /* ============================================================
-   AETHERION STUDIOS — Chrome partagé (header, footer, globaux)
+   MAISON BONBON — Chrome partagé (header, footer, globaux)
    Injecté sur toutes les pages pour une nav cohérente (DRY).
    Doit être chargé AVANT main.js et APRÈS data/team.js.
    ============================================================ */
@@ -26,10 +26,10 @@
     : "";
 
   const links = [
-    { href: "studio.html", label: "Studio" },
-    { href: "games.html", label: "Jeux" },
-    { href: "teams.html", label: "Équipes", dropdown: deptMenu },
-    { href: "careers.html", label: "Carrières" },
+    { href: "studio.html", label: "La Maison" },
+    { href: "games.html", label: "La Carte" },
+    { href: "teams.html", label: "Nos Ateliers", dropdown: deptMenu },
+    { href: "careers.html", label: "Recrutement" },
     { href: "news.html", label: "Actus" },
     { href: "contact.html", label: "Contact" },
   ];
@@ -51,11 +51,11 @@
 
   const header = `
     <a href="index.html" class="nav__brand" data-cursor>
-      <span class="nav__mark"></span>AETHERION<span class="nav__brand-sub">STUDIOS</span>
+      <span class="nav__mark"></span>Bonbon<span class="nav__brand-sub">PÂTISSERIE</span>
     </a>
     <nav class="nav__links" aria-label="Navigation principale">${navLinks}</nav>
-    <a href="careers.html" class="btn btn--ghost nav__cta" data-cursor>
-      Nous rejoindre
+    <a href="contact.html" class="btn btn--ghost nav__cta" data-cursor>
+      Commander
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
     </a>
     <button class="nav__burger" id="burger" aria-label="Menu"><span></span><span></span><span></span></button>
@@ -64,36 +64,36 @@
   const footer = `
     <div class="footer__top">
       <div class="footer__brand">
-        <span class="nav__mark"></span> AETHERION <em>STUDIOS</em>
-        <p>Nous créons des mondes dont on se souvient.</p>
+        <span class="nav__mark"></span> Bonbon <em>PÂTISSERIE</em>
+        <p>Des douceurs faites maison, chaque jour, avec amour.</p>
       </div>
       <div class="footer__cols">
         <div>
-          <h4>Studio</h4>
-          <a href="studio.html" data-cursor>À propos</a>
-          <a href="teams.html" data-cursor>Nos équipes</a>
-          <a href="careers.html" data-cursor>Carrières</a>
+          <h4>La Maison</h4>
+          <a href="studio.html" data-cursor>Notre histoire</a>
+          <a href="teams.html" data-cursor>Nos ateliers</a>
+          <a href="careers.html" data-cursor>Recrutement</a>
           <a href="news.html" data-cursor>Actualités</a>
         </div>
         <div>
-          <h4>Jeux</h4>
-          <a href="games.html" data-cursor>Catalogue</a>
-          <a href="game.html?id=aetherion" data-cursor>Aetherion</a>
-          <a href="game.html?id=mythwright" data-cursor>Mythwright</a>
-          <a href="game.html?id=neon-requiem" data-cursor>Neon Requiem</a>
+          <h4>La Carte</h4>
+          <a href="games.html" data-cursor>Toutes nos pâtisseries</a>
+          <a href="game.html?id=macaron-framboise" data-cursor>Macaron Framboise</a>
+          <a href="game.html?id=paris-brest" data-cursor>Paris-Brest</a>
+          <a href="game.html?id=tarte-citron" data-cursor>Tarte au Citron</a>
         </div>
         <div>
-          <h4>Communauté</h4>
-          <a href="#" data-cursor>Discord</a>
-          <a href="#" data-cursor>X / Twitter</a>
-          <a href="#" data-cursor>YouTube</a>
+          <h4>Nous suivre</h4>
+          <a href="#" data-cursor>Instagram</a>
+          <a href="#" data-cursor>Facebook</a>
+          <a href="#" data-cursor>Pinterest</a>
           <a href="contact.html" data-cursor>Contact</a>
         </div>
       </div>
     </div>
     <div class="footer__bottom">
-      <p>© ${new Date().getFullYear()} Aetherion Studios. Univers et jeux fictifs — projet de démonstration.</p>
-      <p>Conçu avec passion pour les joueurs.</p>
+      <p>© ${new Date().getFullYear()} Maison Bonbon. Maison et produits fictifs — projet de démonstration.</p>
+      <p>Fait maison, avec gourmandise. 🍓</p>
     </div>
   `;
 
@@ -101,7 +101,7 @@
   const chrome = document.createElement("div");
   chrome.innerHTML = `
     <div class="loader" id="loader" aria-hidden="true">
-      <div class="loader__logo">AETHERION</div>
+      <div class="loader__logo">Bonbon</div>
       <div class="loader__bar"><span id="loaderBar"></span></div>
       <div class="loader__pct" id="loaderPct">0%</div>
     </div>

@@ -1,5 +1,5 @@
 /* ============================================================
-   AETHERION STUDIOS — Page secteur (?dept=slug) + profils
+   MAISON BONBON — Page secteur (?dept=slug) + profils
    ============================================================ */
 (() => {
   "use strict";
@@ -10,14 +10,14 @@
   const slug = params.get("dept") || window.DEPARTMENT_ORDER[0];
   const dept = window.DEPARTMENTS[slug] || window.DEPARTMENTS[window.DEPARTMENT_ORDER[0]];
 
-  document.title = `${dept.name} — Aetherion Studios`;
+  document.title = `${dept.name} — Maison Bonbon`;
 
   const others = window.DEPARTMENT_ORDER.filter((s) => s !== dept.slug).map((s) => window.DEPARTMENTS[s]);
 
   root.innerHTML = `
     <section class="sector-hero" style="--hue:${dept.hue}">
       <div class="sector-hero__glow"></div>
-      <a href="teams.html" class="gd-back reveal" data-cursor>← Toutes les équipes</a>
+      <a href="teams.html" class="gd-back reveal" data-cursor>← Tous nos ateliers</a>
       <span class="sector-hero__icon reveal" style="--d:.05s">${dept.icon}</span>
       <h1 class="sector-hero__title reveal" style="--d:.1s">${dept.name}</h1>
       <p class="sector-hero__tagline reveal" style="--d:.2s">${dept.tagline}</p>
@@ -37,7 +37,7 @@
         </div>
       </div>
       <div class="sector-stack reveal">
-        <h3 class="sector-focus__title">Outils & technologies</h3>
+        <h3 class="sector-focus__title">Savoir-faire & matériel</h3>
         <div class="sector-stack__chips">
           ${dept.stack.map((t) => `<span class="chip chip--sm">${t}</span>`).join("")}
         </div>
@@ -47,7 +47,7 @@
     <section class="sector-team">
       <div class="section-head">
         <p class="section-head__tag reveal">L'équipe</p>
-        <h2 class="section-head__title reveal" style="--d:.1s">Des profils hypothétiques</h2>
+        <h2 class="section-head__title reveal" style="--d:.1s">Les artisans de l'atelier</h2>
       </div>
       <div class="profiles">
         ${dept.profiles
@@ -57,7 +57,7 @@
             <div class="profile__avatar" style="--hue:${avatarHue(p.name)}">${initials(p.name)}</div>
             <h3 class="profile__name">${p.name}</h3>
             <p class="profile__role">${p.role}</p>
-            <p class="profile__years">${p.years} ans d'expérience</p>
+            <p class="profile__years">${p.years} ans de métier</p>
             <p class="profile__bio">${p.bio}</p>
             <div class="profile__skills">${p.skills.map((s) => `<span>${s}</span>`).join("")}</div>
           </article>`
@@ -67,7 +67,7 @@
     </section>
 
     <section class="sector-others">
-      <h2 class="section-head__title reveal">Explorer les autres secteurs</h2>
+      <h2 class="section-head__title reveal">Explorer les autres ateliers</h2>
       <div class="sector-others__grid">
         ${others
           .map(

@@ -1,5 +1,5 @@
 /* ============================================================
-   AETHERION STUDIOS — interactions globales (multi-pages)
+   MAISON BONBON — interactions globales (multi-pages)
    Expose window.AETHER.refresh() pour le contenu dynamique.
    ============================================================ */
 (() => {
@@ -152,7 +152,7 @@
   if (canvas && !reduceMotion) {
     const ctx = canvas.getContext("2d");
     let w, h, particles, mouse = { x: -999, y: -999 };
-    const COLORS = ["168,85,247", "56,189,248", "244,114,182"];
+    const COLORS = ["255,79,154", "255,134,189", "201,139,224"];
     function resize() {
       w = canvas.width = window.innerWidth;
       h = canvas.height = window.innerHeight;
@@ -207,7 +207,7 @@
   document.addEventListener("click", (e) => {
     if (e.target.closest(".trailer__play, .btn--play")) {
       e.preventDefault();
-      flash("🎬 La bande-annonce sera dévoilée le jour de la sortie !");
+      flash("🎬 Nos vidéos recettes arrivent bientôt en cuisine !");
     }
   });
   const form = document.getElementById("ctaForm");
@@ -215,7 +215,7 @@
     form.addEventListener("submit", (e) => {
       e.preventDefault();
       const email = form.querySelector("input").value.trim();
-      flash(`✦ Bienvenue dans la légende, ${email.split("@")[0] || "héros"} !`);
+      flash(`🍰 Merci ${email.split("@")[0] || "gourmand"}, à très vite chez Bonbon !`);
       form.reset();
     });
   }

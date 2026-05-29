@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="AETHERION — Plongez dans un open-world next-gen. Un RPG d'action immersif primé qui repousse les limites du jeu vidéo." />
+  <meta name="theme-color" content="#0a0118" />
+  <meta property="og:title" content="AETHERION — Le RPG next-gen" />
+  <meta property="og:description" content="Explorez un univers vivant. Forgez votre légende." />
+  <meta property="og:type" content="website" />
+  <title>AETHERION — RPG Open-World Next-Gen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body>
+  <!-- Loading screen -->
+  <div class="loader" id="loader" aria-hidden="true">
+    <div class="loader__logo">AETHERION</div>
+    <div class="loader__bar"><span id="loaderBar"></span></div>
+    <div class="loader__pct" id="loaderPct">0%</div>
+  </div>
+
+  <!-- Custom cursor -->
+  <div class="cursor" id="cursor" aria-hidden="true"></div>
+  <div class="cursor-dot" id="cursorDot" aria-hidden="true"></div>
+
+  <!-- Particle background -->
+  <canvas class="bg-canvas" id="bgCanvas" aria-hidden="true"></canvas>
+
+  <!-- Scroll progress -->
+  <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+
+  <!-- Navigation -->
+  <header class="nav" id="nav">
+    <a href="#hero" class="nav__brand" data-cursor>
+      <span class="nav__mark"></span>
+      AETHERION
+    </a>
+    <nav class="nav__links" aria-label="Navigation principale">
+      <a href="#about" data-cursor>Univers</a>
+      <a href="#games" data-cursor>Mondes</a>
+      <a href="#features" data-cursor>Gameplay</a>
+      <a href="#stats" data-cursor>Communauté</a>
+    </nav>
+    <a href="#cta" class="btn btn--ghost nav__cta" data-cursor>
+      Précommander
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </a>
+    <button class="nav__burger" id="burger" aria-label="Menu"><span></span><span></span><span></span></button>
+  </header>
+
+  <main>
+    <!-- HERO -->
+    <section class="hero" id="hero">
+      <div class="hero__glow"></div>
+      <div class="hero__content">
+        <p class="hero__eyebrow reveal">Disponible le 14 mars 2026 · PC · PS5 · XBOX</p>
+        <h1 class="hero__title">
+          <span class="reveal" style="--d:.05s">FORGEZ</span>
+          <span class="reveal hero__title--accent" style="--d:.15s" data-glitch="VOTRE">VOTRE</span>
+          <span class="reveal" style="--d:.25s">LÉGENDE</span>
+        </h1>
+        <p class="hero__sub reveal" style="--d:.4s">
+          Un RPG d'action en monde ouvert où chaque choix façonne un univers vivant.
+          Explorez. Combattez. Régnez sur l'Aetherion.
+        </p>
+        <div class="hero__actions reveal" style="--d:.55s">
+          <a href="#cta" class="btn btn--primary" data-cursor data-magnetic>
+            <span>Précommander — 59,99 €</span>
+          </a>
+          <a href="#trailer" class="btn btn--play" data-cursor data-magnetic>
+            <span class="btn__play-icon">▶</span>
+            Voir le trailer
+          </a>
+        </div>
+      </div>
+      <div class="hero__scroll">
+        <span>Défiler</span>
+        <div class="hero__scroll-line"><i></i></div>
+      </div>
+      <div class="hero__badges reveal" style="--d:.7s">
+        <div class="badge"><strong>9.6</strong><span>IGN</span></div>
+        <div class="badge"><strong>96</strong><span>Metacritic</span></div>
+        <div class="badge"><strong>GOTY</strong><span>Nominé 2026</span></div>
+      </div>
+    </section>
+
+    <!-- MARQUEE -->
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee__track">
+        <span>OPEN WORLD</span><span>✦</span><span>RAY TRACING</span><span>✦</span>
+        <span>COMBAT NEXT-GEN</span><span>✦</span><span>CO-OP 4 JOUEURS</span><span>✦</span>
+        <span>OPEN WORLD</span><span>✦</span><span>RAY TRACING</span><span>✦</span>
+        <span>COMBAT NEXT-GEN</span><span>✦</span><span>CO-OP 4 JOUEURS</span><span>✦</span>
+      </div>
+    </div>
+
+    <!-- ABOUT -->
+    <section class="about" id="about">
+      <div class="section-head">
+        <p class="section-head__tag reveal">01 — L'Univers</p>
+        <h2 class="section-head__title reveal" style="--d:.1s">Un monde qui respire,<br>réagit et se souvient</h2>
+      </div>
+      <p class="about__lead reveal" style="--d:.2s">
+        L'Aetherion n'est pas une carte — c'est un organisme. Des cités flottantes aux
+        abysses oubliés, chaque région possède son écosystème, sa météo dynamique et ses
+        factions aux ambitions propres. Vos actions laissent des traces permanentes.
+      </p>
+      <div class="about__grid">
+        <article class="feature-card reveal" data-cursor data-tilt style="--d:.1s">
+          <div class="feature-card__icon">⚔️</div>
+          <h3>Combat fluide</h3>
+          <p>Un système de combat à 60+ fps avec parades, esquives et combos à la frame près.</p>
+        </article>
+        <article class="feature-card reveal" data-cursor data-tilt style="--d:.2s">
+          <div class="feature-card__icon">🌌</div>
+          <h3>Monde vivant</h3>
+          <p>Plus de 300 PNJ avec routines uniques, mémoire et réactions à votre réputation.</p>
+        </article>
+        <article class="feature-card reveal" data-cursor data-tilt style="--d:.3s">
+          <div class="feature-card__icon">🔮</div>
+          <h3>Magie modulaire</h3>
+          <p>Fusionnez les éléments pour créer des sorts impossibles à reproduire à l'identique.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- GAMES / WORLDS -->
+    <section class="games" id="games">
+      <div class="section-head">
+        <p class="section-head__tag reveal">02 — Les Mondes</p>
+        <h2 class="section-head__title reveal" style="--d:.1s">Cinq royaumes.<br>Une infinité de destins.</h2>
+      </div>
+      <div class="games__grid">
+        <article class="world-card world-card--lg reveal" data-cursor data-tilt>
+          <div class="world-card__media" style="--hue:280"></div>
+          <div class="world-card__body">
+            <span class="world-card__num">01</span>
+            <h3>Cités d'Aether</h3>
+            <p>Métropoles suspendues entre les nuages, gouvernées par l'Ordre Arcanique.</p>
+          </div>
+        </article>
+        <article class="world-card reveal" style="--d:.1s" data-cursor data-tilt>
+          <div class="world-card__media" style="--hue:190"></div>
+          <div class="world-card__body">
+            <span class="world-card__num">02</span>
+            <h3>Abysses de Givre</h3>
+            <p>Un froid qui ronge l'âme.</p>
+          </div>
+        </article>
+        <article class="world-card reveal" style="--d:.2s" data-cursor data-tilt>
+          <div class="world-card__media" style="--hue:25"></div>
+          <div class="world-card__body">
+            <span class="world-card__num">03</span>
+            <h3>Désert d'Ambre</h3>
+            <p>Des ruines enfouies sous le sable.</p>
+          </div>
+        </article>
+        <article class="world-card world-card--wide reveal" style="--d:.1s" data-cursor data-tilt>
+          <div class="world-card__media" style="--hue:330"></div>
+          <div class="world-card__body">
+            <span class="world-card__num">04</span>
+            <h3>Forêt Spectrale</h3>
+            <p>Là où les morts murmurent encore. Une zone vivante de jour, hantée la nuit.</p>
+          </div>
+        </article>
+        <article class="world-card reveal" style="--d:.2s" data-cursor data-tilt>
+          <div class="world-card__media" style="--hue:140"></div>
+          <div class="world-card__body">
+            <span class="world-card__num">05</span>
+            <h3>Cœur du Vide</h3>
+            <p>Le dénouement vous attend.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- TRAILER -->
+    <section class="trailer" id="trailer">
+      <div class="trailer__inner reveal" data-cursor>
+        <div class="trailer__play" id="trailerPlay">
+          <span>▶</span>
+        </div>
+        <div class="trailer__meta">
+          <p class="section-head__tag">Bande-annonce officielle</p>
+          <h2 class="section-head__title">Découvrez le monde<br>en mouvement</h2>
+          <p class="trailer__caption">4K · HDR · 60 fps — capturé en temps réel sur le moteur Aether.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURES (sticky) -->
+    <section class="features" id="features">
+      <div class="section-head">
+        <p class="section-head__tag reveal">03 — Gameplay</p>
+        <h2 class="section-head__title reveal" style="--d:.1s">Conçu pour être<br>maîtrisé, pas juste joué</h2>
+      </div>
+      <div class="features__list">
+        <div class="feat-row reveal" data-cursor>
+          <span class="feat-row__num">/01</span>
+          <h3>Progression sans niveaux</h3>
+          <p>Votre personnage évolue selon ce que vous faites réellement. Pas de barres d'XP — de vraies compétences.</p>
+        </div>
+        <div class="feat-row reveal" data-cursor>
+          <span class="feat-row__num">/02</span>
+          <h3>Conséquences réelles</h3>
+          <p>Tuer un marchand ferme une lignée de quêtes. Sauver un village change la carte pour toujours.</p>
+        </div>
+        <div class="feat-row reveal" data-cursor>
+          <span class="feat-row__num">/03</span>
+          <h3>Coopération transparente</h3>
+          <p>Rejoignez jusqu'à 3 amis sans menu ni lobby. Le monde s'adapte à votre groupe.</p>
+        </div>
+        <div class="feat-row reveal" data-cursor>
+          <span class="feat-row__num">/04</span>
+          <h3>Accessibilité totale</h3>
+          <p>Plus de 40 options d'accessibilité. Parce qu'une légende devrait être à la portée de tous.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATS -->
+    <section class="stats" id="stats">
+      <div class="stats__grid">
+        <div class="stat reveal" data-cursor>
+          <span class="stat__num" data-count="2400000">0</span>
+          <span class="stat__label">Précommandes</span>
+        </div>
+        <div class="stat reveal" style="--d:.1s" data-cursor>
+          <span class="stat__num" data-count="180" data-suffix="+">0</span>
+          <span class="stat__label">Heures de contenu</span>
+        </div>
+        <div class="stat reveal" style="--d:.2s" data-cursor>
+          <span class="stat__num" data-count="96" data-suffix="">0</span>
+          <span class="stat__label">Note Metacritic</span>
+        </div>
+        <div class="stat reveal" style="--d:.3s" data-cursor>
+          <span class="stat__num" data-count="12" data-suffix=" prix">0</span>
+          <span class="stat__label">Récompenses 2026</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta" id="cta">
+      <div class="cta__glow"></div>
+      <div class="cta__inner reveal">
+        <h2 class="cta__title">Votre légende<br>commence maintenant.</h2>
+        <p class="cta__sub">Précommandez et recevez le pack « Aube d'Aether » + accès à la bêta fermée.</p>
+        <form class="cta__form" id="ctaForm">
+          <input type="email" placeholder="votre@email.com" aria-label="Adresse email" required />
+          <button type="submit" class="btn btn--primary" data-cursor data-magnetic><span>Rejoindre la bêta</span></button>
+        </form>
+        <p class="cta__note" id="ctaNote"></p>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer__top">
+      <div class="footer__brand">
+        <span class="nav__mark"></span> AETHERION
+        <p>Forgez votre légende.</p>
+      </div>
+      <div class="footer__cols">
+        <div>
+          <h4>Jeu</h4>
+          <a href="#about" data-cursor>Univers</a>
+          <a href="#games" data-cursor>Mondes</a>
+          <a href="#features" data-cursor>Gameplay</a>
+        </div>
+        <div>
+          <h4>Communauté</h4>
+          <a href="#" data-cursor>Discord</a>
+          <a href="#" data-cursor>X / Twitter</a>
+          <a href="#" data-cursor>YouTube</a>
+        </div>
+        <div>
+          <h4>Support</h4>
+          <a href="#" data-cursor>Aide</a>
+          <a href="#" data-cursor>Configuration</a>
+          <a href="#" data-cursor>Contact</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <p>© 2026 Aetherion Studios. Tous droits réservés.</p>
+      <p>Conçu avec passion pour les joueurs.</p>
+    </div>
+  </footer>
+
+  <script src="scripts/main.js"></script>
+</body>
+</html>

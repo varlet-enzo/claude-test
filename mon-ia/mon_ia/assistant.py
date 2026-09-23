@@ -17,8 +17,11 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import threading
+from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Callable, Iterator, Sequence
 
 import httpx
@@ -30,6 +33,8 @@ from .profile import Profile
 from .storage import DEFAULT_TITLE, ConversationStore, make_title, now_iso
 from .tools import Toolbox, ddgs_fetch, ddgs_search
 
+OWNER = "admin"
+
 log = logging.getLogger(__name__)
 
 MAX_TOOL_ROUNDS = 6
@@ -37,6 +42,15 @@ MAX_TOOL_ROUNDS = 6
 CHARS_PER_TOKEN = 3.5
 IMAGE_TOKENS = 1000
 ANSWER_SHARE = 0.25
+
+
+@dataclass
+class Space:
+    """Les données d'une personne : ses conversations, sa mémoire et ses outils."""
+
+    store: ConversationStore
+    memory: Memory
+    toolbox: Toolbox
 
 
 class AssistantError(Exception):
@@ -71,22 +85,37 @@ class Assistant:
         self.client = client or ollama.Client(host=config.ollama_host)
         self.ollama_url = config.ollama_host or "http://127.0.0.1:11434"
         self.context_chars = int(config.context_size * CHARS_PER_TOKEN)
-        self.store = ConversationStore(config.data_dir / "conversations")
-        self.memory = Memory(config.data_dir / "memoire.md", max_prompt_chars=min(6000, self.context_chars // 5))
         self.profile = Profile(config.data_dir, config.name)
-        self.toolbox = Toolbox(
-            self.memory,
-            web=config.web_search,
-            region=config.search_region,
-            page_chars=min(20000, int(self.context_chars * 0.35)),
-            search=search,
-            fetch=fetch,
-        )
+        self._search = search
+        self._fetch = fetch
+        self._spaces: dict[str, Space] = {}
+        self._spaces_lock = threading.Lock()
+        self.owner = self.space_for(OWNER)
+        self.store, self.memory, self.toolbox = self.owner.store, self.owner.memory, self.owner.toolbox
         self._clock = clock
         self._capabilities: dict[str, set[str] | None] = {}
         self._tools_refused: set[str] = set()
         self._busy: set[str] = set()
         self._busy_lock = threading.Lock()
+
+    def space_for(self, user: str) -> Space:
+        """L'espace de la personne qui héberge l'IA, ou celui d'un invité (data/invites/<pseudo>)."""
+        if user != OWNER and not re.fullmatch(r"[a-z0-9_-]{2,20}", user):
+            raise ValueError(f"Pseudo invalide : {user!r}")
+        with self._spaces_lock:
+            if user not in self._spaces:
+                root: Path = self.config.data_dir if user == OWNER else self.config.data_dir / "invites" / user
+                memory = Memory(root / "memoire.md", max_prompt_chars=min(6000, self.context_chars // 5))
+                toolbox = Toolbox(
+                    memory,
+                    web=self.config.web_search,
+                    region=self.config.search_region,
+                    page_chars=min(20000, int(self.context_chars * 0.35)),
+                    search=self._search,
+                    fetch=self._fetch,
+                )
+                self._spaces[user] = Space(ConversationStore(root / "conversations"), memory, toolbox)
+            return self._spaces[user]
 
     # --- Modèles -----------------------------------------------------------------------------
 
@@ -218,11 +247,15 @@ class Assistant:
         documents: Sequence[tuple[str, str]] = (),
         model: str | None = None,
         thinking: bool | None = None,
+        space: Space | None = None,
+        guest: str | None = None,
     ) -> Iterator[dict[str, Any]]:
         """Envoie un message et renvoie la réponse au fil de l'eau.
 
         images : liste de (nom du fichier, image JPEG en base64)
         documents : liste de (nom du fichier, texte extrait)
+        space : l'espace de la personne qui écrit (par défaut, celui de la personne qui héberge l'IA)
+        guest : le pseudo de l'invité qui écrit, pour que l'IA sache à qui elle parle
         """
         conversation_id = conversation["id"]
         with self._busy_lock:
@@ -233,7 +266,7 @@ class Assistant:
             yield {"type": "error", "message": "Une réponse est déjà en cours dans cette conversation."}
             return
         try:
-            yield from self._chat(conversation, text, list(images), list(documents), model, thinking)
+            yield from self._chat(conversation, text, list(images), list(documents), model, thinking, space or self.owner, guest)
         finally:
             with self._busy_lock:
                 self._busy.discard(conversation_id)
@@ -302,7 +335,9 @@ class Assistant:
             used += weight
         return [{"role": "system", "content": system_prompt}, *kept, *current], used > budget
 
-    def _save_partial(self, conversation: dict[str, Any], content: str, reasoning: str, model: str, notice: str) -> None:
+    def _save_partial(
+        self, space: Space, conversation: dict[str, Any], content: str, reasoning: str, model: str, notice: str
+    ) -> None:
         message: dict[str, Any] = {
             "role": "assistant",
             "content": content,
@@ -314,7 +349,7 @@ class Assistant:
             message["thinking"] = reasoning
         conversation["messages"].append(message)
         try:
-            self.store.save(conversation)
+            space.store.save(conversation)
         except OSError:
             log.exception("Impossible de sauvegarder la réponse partielle")
 
@@ -326,6 +361,8 @@ class Assistant:
         documents: list[tuple[str, str]],
         model: str | None,
         thinking: bool | None,
+        space: Space,
+        guest: str | None,
     ) -> Iterator[dict[str, Any]]:
         model = model or self.default_model()
         messages = conversation["messages"]
@@ -343,7 +380,7 @@ class Assistant:
         messages.append(user_message)
         if conversation.get("title", DEFAULT_TITLE) == DEFAULT_TITLE:
             conversation["title"] = make_title(text or (names[0] if names else ""))
-        self.store.save(conversation)
+        space.store.save(conversation)
         yield {"type": "conversation", "id": conversation["id"], "title": conversation["title"]}
         turn_start = len(messages) - 1
 
@@ -356,7 +393,7 @@ class Assistant:
             yield {"type": "error", "message": self._unreachable()}
             return
 
-        use_tools = bool(self.toolbox.names) and model not in self._tools_refused and (
+        use_tools = bool(space.toolbox.names) and model not in self._tools_refused and (
             capabilities is None or "tools" in capabilities
         )
         think = self._think_parameter(model, capabilities, self.config.thinking if thinking is None else thinking)
@@ -367,9 +404,10 @@ class Assistant:
 
         def build_system_prompt() -> str:
             return self.profile.system_prompt(
-                memory=self.memory.for_prompt(),
-                tool_guide=self.toolbox.guide() if use_tools else "",
+                memory=space.memory.for_prompt(),
+                tool_guide=space.toolbox.guide() if use_tools else "",
                 now=self._clock(),
+                guest=guest,
             )
 
         system_prompt = build_system_prompt()
@@ -392,7 +430,7 @@ class Assistant:
                 stream = self.client.chat(
                     model=model,
                     messages=request,
-                    tools=self.toolbox.definitions() if allow_tools else None,
+                    tools=space.toolbox.definitions() if allow_tools else None,
                     think=think,
                     stream=True,
                     options={"num_ctx": self.config.context_size},
@@ -409,7 +447,7 @@ class Assistant:
                     if chunk.done:
                         final = chunk
             except (GeneratorExit, KeyboardInterrupt):
-                self._save_partial(conversation, content, reasoning, model, "Réponse interrompue.")
+                self._save_partial(space, conversation, content, reasoning, model, "Réponse interrompue.")
                 raise
             except ollama.ResponseError as exc:
                 if allow_tools and "does not support tools" in (exc.error or ""):
@@ -434,7 +472,7 @@ class Assistant:
 
             if error:
                 if content or reasoning:
-                    self._save_partial(conversation, content, reasoning, model, f"Réponse interrompue par une erreur : {error}")
+                    self._save_partial(space, conversation, content, reasoning, model, f"Réponse interrompue par une erreur : {error}")
                 yield {"type": "error", "message": error}
                 return
 
@@ -457,9 +495,9 @@ class Assistant:
                 try:
                     for call in step["tool_calls"]:
                         name, arguments = call["function"]["name"], call["function"]["arguments"]
-                        label = self.toolbox.describe(name, arguments)
+                        label = space.toolbox.describe(name, arguments)
                         yield {"type": "tool_call", "name": name, "label": label}
-                        result = self.toolbox.run(name, arguments)
+                        result = space.toolbox.run(name, arguments)
                         pending.append(
                             {
                                 "role": "tool",
@@ -472,10 +510,10 @@ class Assistant:
                         )
                         yield {"type": "tool_result", "name": name, "summary": result.summary, "error": result.error}
                 except (GeneratorExit, KeyboardInterrupt):
-                    self._save_partial(conversation, content, reasoning, model, "Réponse interrompue.")
+                    self._save_partial(space, conversation, content, reasoning, model, "Réponse interrompue.")
                     raise
                 messages.extend(pending)
-                self.store.save(conversation)
+                space.store.save(conversation)
                 rounds += 1
                 continue
 
@@ -502,6 +540,6 @@ class Assistant:
             if notices or final_notices:
                 answer["notices"] = notices + final_notices
             messages.append(answer)
-            self.store.save(conversation)
+            space.store.save(conversation)
             yield {"type": "done", "model": model, "stats": stats}
             return

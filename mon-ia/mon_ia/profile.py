@@ -68,9 +68,14 @@ class Profile:
         with self._lock:
             self.personality_path.write_text(text.strip() + "\n" if text.strip() else DEFAULT_PERSONALITY, encoding="utf-8")
 
-    def system_prompt(self, *, memory: str, tool_guide: str, now: datetime) -> str:
-        parts = [
-            self.personality.replace("{nom}", self.name).strip(),
+    def system_prompt(self, *, memory: str, tool_guide: str, now: datetime, guest: str | None = None) -> str:
+        parts = [self.personality.replace("{nom}", self.name).strip()]
+        if guest:
+            parts.append(
+                f"Tu discutes en ce moment avec {guest}, un ami de la personne qui t'héberge sur son ordinateur. "
+                "« L'utilisateur », c'est lui."
+            )
+        parts += [
             f"Nous sommes le {french_date(now)}.",
             "## Ce que tu sais sur l'utilisateur (ta mémoire à long terme)\n"
             + (memory or "Tu ne sais encore rien sur lui : tu l'apprendras au fil de vos discussions."),

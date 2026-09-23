@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+import re
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -21,6 +22,23 @@ def _read_bool(name: str, default: bool) -> bool:
     if value in FALSE_WORDS:
         return False
     return default
+
+
+def _read_friends(value: str) -> dict[str, str]:
+    """IA_AMIS=leo:motdepasse1, sam:motdepasse2  ->  {"leo": "motdepasse1", "sam": "motdepasse2"}"""
+    friends: dict[str, str] = {}
+    for entry in filter(None, (part.strip() for part in value.split(","))):
+        pseudo, separator, password = entry.partition(":")
+        pseudo, password = pseudo.strip().lower(), password.strip()
+        if not separator or not re.fullmatch(r"[a-z0-9_-]{2,20}", pseudo) or pseudo == "admin":
+            raise SystemExit(
+                f"IA_AMIS : « {entry} » est invalide. Écris pseudo:motdepasse, avec un pseudo de 2 à 20 lettres "
+                "sans accent ni espace (et différent de « admin »)."
+            )
+        if len(password) < 6:
+            raise SystemExit(f"IA_AMIS : le mot de passe de « {pseudo} » doit faire au moins 6 caractères.")
+        friends[pseudo] = password
+    return friends
 
 
 def _read_int(name: str, default: int) -> int:
@@ -52,6 +70,13 @@ class Config:
     # Adresse de l'interface web. 127.0.0.1 = accessible uniquement depuis ton ordinateur.
     host: str = "127.0.0.1"
     port: int = 8000
+    # Mode partage : ton mot de passe (compte « admin ») et les comptes de tes potes.
+    password: str | None = None
+    friends: dict[str, str] = field(default_factory=dict)
+
+    @property
+    def sharing(self) -> bool:
+        return self.password is not None
 
     @classmethod
     def load(cls, env_file: Path | None = None) -> Config:
@@ -63,6 +88,12 @@ class Config:
         context_size = _read_int("IA_CONTEXTE", defaults.context_size)
         if context_size < 2048:
             raise SystemExit("IA_CONTEXTE doit valoir au moins 2048.")
+        password = os.getenv("IA_MOT_DE_PASSE", "").strip() or None
+        friends = _read_friends(os.getenv("IA_AMIS", ""))
+        if password is not None and len(password) < 8:
+            raise SystemExit("IA_MOT_DE_PASSE doit faire au moins 8 caractères.")
+        if friends and password is None:
+            raise SystemExit("IA_AMIS a besoin de IA_MOT_DE_PASSE (ton propre mot de passe) pour fonctionner.")
         return cls(
             name=os.getenv("IA_NOM", "").strip() or defaults.name,
             model=os.getenv("IA_MODELE", "").strip() or defaults.model,
@@ -74,4 +105,6 @@ class Config:
             data_dir=data_dir,
             host=os.getenv("IA_HOTE", "").strip() or defaults.host,
             port=_read_int("IA_PORT", defaults.port),
+            password=password,
+            friends=friends,
         )

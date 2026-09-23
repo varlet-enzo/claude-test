@@ -7,7 +7,7 @@ import logging
 from pathlib import Path
 from typing import Any, AsyncIterator, Generator
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -15,7 +15,8 @@ from starlette.concurrency import run_in_threadpool
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from . import __version__
-from .assistant import Assistant
+from .assistant import Assistant, Space
+from .auth import SESSION_COOKIE, SESSION_SECONDS, Accounts, LoginError, User
 from .files import AttachmentError, prepare_attachments
 from .storage import display_messages
 
@@ -53,8 +54,13 @@ class ProfileIn(BaseModel):
     personality: str
 
 
+class LoginIn(BaseModel):
+    pseudo: str = Field(max_length=40)
+    password: str = Field(max_length=200)
+
+
 def event_stream(events: Generator[dict[str, Any], None, None]) -> StreamingResponse:
-    """Transmet les événements au navigateur au fur et à mesure (Server-Sent Events)."""
+    """Transmet les événements au navigateur au fur et à mesure."""
 
     async def body() -> AsyncIterator[str]:
         try:
@@ -73,23 +79,77 @@ def event_stream(events: Generator[dict[str, Any], None, None]) -> StreamingResp
             # Fermer le générateur arrête la génération côté Ollama et sauvegarde la réponse partielle.
             events.close()
 
+    # Pas de « text/event-stream » : les tunnels rapides de Cloudflare ne le transmettent pas.
+    # « no-transform » empêche les intermédiaires de compresser, donc de retenir, le flux.
     return StreamingResponse(
-        body(), media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+        body(),
+        media_type="application/x-ndjson",
+        headers={"Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no"},
     )
 
 
 def create_app(assistant: Assistant) -> FastAPI:
     app = FastAPI(title="Mon IA", version=__version__, docs_url=None, redoc_url=None, openapi_url=None)
-    if assistant.config.host in LOCAL_HOSTS:
-        # Empêche un site malveillant de piloter ton IA via une attaque de type « DNS rebinding ».
+    accounts = Accounts(assistant.config)
+    if assistant.config.host in LOCAL_HOSTS and not accounts.enabled:
+        # Sans mot de passe, empêche un site malveillant de piloter ton IA (attaque « DNS rebinding »).
+        # En mode partage, c'est la connexion qui protège, et le lien Cloudflare doit pouvoir passer.
         app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost"])
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+    def current_user(request: Request) -> User:
+        user = accounts.user_from_cookie(request.cookies.get(SESSION_COOKIE))
+        if user is None:
+            raise HTTPException(401, "Connecte-toi pour continuer.")
+        return user
+
+    def owner_only(user: User = Depends(current_user)) -> User:
+        if not user.is_owner:
+            raise HTTPException(403, "Réservé à la personne qui héberge l'IA.")
+        return user
+
+    def space(user: User = Depends(current_user)) -> Space:
+        return assistant.space_for(user.name)
+
+    @app.get("/api/session")
+    def session(request: Request) -> dict[str, Any]:
+        user = accounts.user_from_cookie(request.cookies.get(SESSION_COOKIE))
+        return {
+            "sharing": accounts.enabled,
+            "user": user.name if user else None,
+            "owner": bool(user and user.is_owner),
+        }
+
+    @app.post("/api/connexion")
+    def login(body: LoginIn, request: Request, response: Response) -> dict[str, Any]:
+        if not accounts.enabled:
+            return {"user": "admin", "owner": True}
+        client = request.headers.get("cf-connecting-ip") or (request.client.host if request.client else "?")
+        try:
+            user = accounts.login(body.pseudo, body.password, client)
+        except LoginError as exc:
+            status = 429 if "Trop d'essais" in str(exc) else 401
+            raise HTTPException(status, str(exc)) from None
+        response.set_cookie(
+            SESSION_COOKIE,
+            accounts.cookie_for(user),
+            max_age=SESSION_SECONDS,
+            httponly=True,
+            samesite="lax",
+            secure=request.url.scheme == "https",
+        )
+        return {"user": user.name, "owner": user.is_owner}
+
+    @app.post("/api/deconnexion")
+    def logout(response: Response) -> dict[str, bool]:
+        response.delete_cookie(SESSION_COOKIE)
+        return {"ok": True}
 
     @app.get("/", include_in_schema=False)
     def index() -> FileResponse:
         return FileResponse(STATIC_DIR / "index.html", headers={"Cache-Control": "no-cache"})
 
-    @app.get("/api/infos")
+    @app.get("/api/infos", dependencies=[Depends(current_user)])
     def infos() -> dict[str, Any]:
         return {
             "name": assistant.profile.name,
@@ -99,43 +159,44 @@ def create_app(assistant: Assistant) -> FastAPI:
             "context_size": assistant.config.context_size,
         }
 
-    @app.get("/api/modeles")
+    @app.get("/api/modeles", dependencies=[Depends(current_user)])
     def models() -> dict[str, Any]:
         return assistant.models_overview()
 
-    @app.post("/api/modeles/telecharger")
+    @app.post("/api/modeles/telecharger", dependencies=[Depends(owner_only)])
     def pull(body: PullIn) -> StreamingResponse:
         return event_stream(assistant.pull(body.model))
 
     @app.get("/api/conversations")
-    def conversations() -> list[dict[str, Any]]:
-        return assistant.store.list()
+    def conversations(mine: Space = Depends(space)) -> list[dict[str, Any]]:
+        return mine.store.list()
 
     @app.get("/api/conversations/{conversation_id}")
-    def conversation(conversation_id: str) -> dict[str, Any]:
+    def conversation(conversation_id: str, mine: Space = Depends(space)) -> dict[str, Any]:
         try:
-            data = assistant.store.load(conversation_id)
+            data = mine.store.load(conversation_id)
         except KeyError:
             raise HTTPException(404, "Conversation introuvable.") from None
         return {"id": data["id"], "title": data["title"], "messages": display_messages(data["messages"])}
 
     @app.delete("/api/conversations/{conversation_id}")
-    def delete_conversation(conversation_id: str) -> dict[str, bool]:
+    def delete_conversation(conversation_id: str, mine: Space = Depends(space)) -> dict[str, bool]:
         try:
-            assistant.store.delete(conversation_id)
+            mine.store.delete(conversation_id)
         except KeyError:
             raise HTTPException(404, "Conversation introuvable.") from None
         return {"ok": True}
 
     @app.post("/api/chat")
-    def chat(body: ChatIn) -> StreamingResponse:
+    def chat(body: ChatIn, user: User = Depends(current_user)) -> StreamingResponse:
+        mine = assistant.space_for(user.name)
         if body.conversation_id:
             try:
-                conversation = assistant.store.load(body.conversation_id)
+                conversation = mine.store.load(body.conversation_id)
             except KeyError:
                 raise HTTPException(404, "Conversation introuvable.") from None
         else:
-            conversation = assistant.store.new()
+            conversation = mine.store.new()
         try:
             images, documents = prepare_attachments(body.attachments)
         except AttachmentError as exc:
@@ -150,23 +211,25 @@ def create_app(assistant: Assistant) -> FastAPI:
                 documents=documents,
                 model=body.model or None,
                 thinking=body.thinking,
+                space=mine,
+                guest=None if user.is_owner else user.name.capitalize(),
             )
         )
 
     @app.get("/api/memoire")
-    def read_memory() -> dict[str, str]:
-        return {"text": assistant.memory.read()}
+    def read_memory(mine: Space = Depends(space)) -> dict[str, str]:
+        return {"text": mine.memory.read()}
 
     @app.put("/api/memoire")
-    def write_memory(body: MemoryIn) -> dict[str, str]:
-        assistant.memory.write(body.text)
-        return {"text": assistant.memory.read()}
+    def write_memory(body: MemoryIn, mine: Space = Depends(space)) -> dict[str, str]:
+        mine.memory.write(body.text)
+        return {"text": mine.memory.read()}
 
-    @app.get("/api/profil")
+    @app.get("/api/profil", dependencies=[Depends(current_user)])
     def read_profile() -> dict[str, str]:
         return {"name": assistant.profile.name, "personality": assistant.profile.personality}
 
-    @app.put("/api/profil")
+    @app.put("/api/profil", dependencies=[Depends(owner_only)])
     def write_profile(body: ProfileIn) -> dict[str, str]:
         try:
             assistant.profile.set_name(body.name)

@@ -83,9 +83,46 @@ Options : `--modele qwen3:14b`, `--reflexion`, `--voir-reflexion`.
 - **Sa mémoire** : menu 🧠 (ou le fichier `data/memoire.md`). Elle s'enrichit toute seule quand tu parles de toi, et tu peux la corriger à tout moment. Dis-lui aussi « oublie que… » pour effacer un souvenir.
 - **Les réglages** : copie `.env.exemple` en `.env` pour changer le modèle par défaut, la taille de la mémoire de travail, désactiver la recherche web, etc.
 
+## Partager avec tes potes
+
+Ton IA tourne sur ton PC : pour que tes potes l'utilisent, ton PC sert de serveur, et un **tunnel Cloudflare** (gratuit) leur donne un lien du type `https://xxx.trycloudflare.com`. Chacun a son compte et son espace privé (ses conversations et sa mémoire). Toi seul peux changer le nom, la personnalité et les modèles.
+
+> Pourquoi pas Vercel ou un hébergeur « classique » ? Ils n'ont pas de carte graphique et ne peuvent pas garder un modèle de plusieurs Go en mémoire. Les serveurs qui en sont capables sont payants.
+
+**1. Crée les comptes.** Copie `.env.exemple` en `.env`, puis remplis ces deux lignes (sans le `#` devant) :
+
+```
+IA_MOT_DE_PASSE=un-mot-de-passe-solide-pour-toi
+IA_AMIS=leo:soleil42, sam:banane77
+```
+
+- `IA_MOT_DE_PASSE` : ton mot de passe (8 caractères minimum). Tu te connectes avec le pseudo `admin`.
+- `IA_AMIS` : un `pseudo:motdepasse` par pote, séparés par des virgules. Pseudo sans accent ni espace, mot de passe de 6 caractères minimum.
+
+**2. Installe cloudflared** (une seule fois). Sous Windows, ouvre l'invite de commandes et tape :
+
+```
+winget install --id Cloudflare.cloudflared
+```
+
+Sur Mac : `brew install cloudflared`. Ferme puis rouvre la fenêtre après l'installation.
+
+**3. Lance ton IA** avec `lancer.bat` (ou `./lancer.sh`), comme d'habitude. Elle te demande maintenant de te connecter : pseudo `admin` et ton mot de passe.
+
+**4. Crée le lien** : double-clique sur `partager.bat` (ou lance `./partager.sh`). Au bout de quelques secondes, une adresse en `https://…trycloudflare.com` s'affiche dans un cadre. Envoie-la à tes potes, avec leur pseudo et leur mot de passe.
+
+À savoir :
+
+- **Ton PC doit rester allumé**, avec les fenêtres de `lancer.bat` et de `partager.bat` ouvertes. Les fermer coupe le partage.
+- **Le lien change à chaque lancement** de `partager.bat` : renvoie le nouveau à tes potes. (Pour une adresse fixe, il faut un compte Cloudflare et un nom de domaine.)
+- **Ton IA répond à une personne à la fois** : si plusieurs potes écrivent en même temps, ils attendent leur tour.
+- **Sois honnête avec tes potes** : leurs conversations sont séparées des tiennes dans l'interface, mais elles sont enregistrées sur ton PC (dans `data/invites/`), donc tu pourrais les lire.
+- **Pour retirer l'accès à quelqu'un**, enlève son compte de `IA_AMIS` et relance `lancer.bat` : il est aussitôt déconnecté.
+- **Après 8 mauvais mots de passe**, la connexion est bloquée pendant un quart d'heure, pour empêcher quelqu'un de deviner les mots de passe.
+
 ## Tes données
 
-Tout est rangé dans le dossier `data/` : les conversations (`conversations/`), la mémoire (`memoire.md`), la personnalité (`personnalite.md`) et le nom (`reglages.json`). Pour faire une sauvegarde, copie ce dossier. Pour tout effacer, supprime-le.
+Tout est rangé dans le dossier `data/` : les conversations (`conversations/`), la mémoire (`memoire.md`), la personnalité (`personnalite.md`), le nom (`reglages.json`) et, si tu partages ton IA, les espaces de tes potes (`invites/`). Pour faire une sauvegarde, copie ce dossier. Pour tout effacer, supprime-le.
 
 Ce qui sort de ton ordinateur :
 - les recherches web et les pages lues, quand ton IA utilise ces outils (tu vois toujours quand elle le fait). Pour une IA totalement hors ligne, mets `IA_RECHERCHE_WEB=non` dans le fichier `.env` ;
@@ -99,13 +136,15 @@ Ce qui sort de ton ordinateur :
 - **Elle oublie le début d'une très longue conversation** : c'est normal, sa mémoire de travail est limitée. Augmente `IA_CONTEXTE` si ton ordinateur a assez de mémoire, ou commence une nouvelle conversation (sa mémoire à long terme, elle, est conservée).
 - **La recherche web échoue** : les moteurs de recherche limitent parfois le nombre de requêtes. Réessaie un peu plus tard.
 - **Le port 8000 est déjà utilisé** : ajoute `IA_PORT=8001` dans le fichier `.env`.
-- **L'utiliser depuis ton téléphone** (sur le même Wi-Fi) : mets `IA_HOTE=0.0.0.0` dans `.env`, puis ouvre `http://adresse-ip-de-ton-pc:8000` sur le téléphone. Attention : il n'y a pas de mot de passe, donc toute personne connectée au même réseau pourra aussi l'utiliser.
+- **L'utiliser depuis ton téléphone** (sur le même Wi-Fi) : mets `IA_HOTE=0.0.0.0` dans `.env`, puis ouvre `http://adresse-ip-de-ton-pc:8000` sur le téléphone. Pense à définir aussi `IA_MOT_DE_PASSE`, sinon toute personne connectée au même réseau pourra l'utiliser.
+- **Tes potes voient « Pseudo ou mot de passe incorrect »** : vérifie l'orthographe dans `IA_AMIS` (le pseudo s'écrit sans majuscule obligatoire, mais le mot de passe doit être exact) et que tu as bien relancé `lancer.bat` après avoir modifié `.env`.
 
 ## Pour les curieux
 
 ```
 mon-ia/
 ├── lancer.bat / lancer.sh   lancement en un clic
+├── partager.bat / .sh       lien de partage pour tes potes (Cloudflare Tunnel)
 ├── mon_ia/
 │   ├── assistant.py         le moteur : discute avec le modèle via Ollama, gère le contexte et les outils
 │   ├── tools.py             les outils : mémoire, recherche web, lecture de pages, calcul, date
@@ -114,6 +153,7 @@ mon-ia/
 │   ├── storage.py           la sauvegarde des conversations
 │   ├── files.py             la lecture des fichiers joints
 │   ├── web.py               le serveur de l'interface web
+│   ├── auth.py              les comptes et la connexion (mode partage)
 │   ├── cli.py               la discussion dans le terminal
 │   └── static/              l'interface (HTML, CSS, JavaScript)
 └── tests/                   les tests automatiques, avec un faux Ollama

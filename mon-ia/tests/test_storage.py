@@ -110,3 +110,44 @@ def test_profile_name_and_personality(tmp_path):
         profile.set_name(" ")
     profile.set_personality("   ")
     assert profile.personality == DEFAULT_PERSONALITY
+
+
+def isolated_environment(monkeypatch):
+    """Config.load lit le .env dans os.environ : on travaille sur une copie jetable."""
+    import os
+
+    monkeypatch.setattr(os, "environ", {k: v for k, v in os.environ.items() if not k.startswith("IA_")})
+
+
+def test_friend_accounts_are_read_from_the_settings(monkeypatch, tmp_path):
+    from mon_ia.config import Config
+
+    env = tmp_path / ".env"
+    env.write_text("IA_MOT_DE_PASSE=motdepasse-admin\nIA_AMIS= Leo:soleil42 , sam:banane:77\n", encoding="utf-8")
+    isolated_environment(monkeypatch)
+
+    config = Config.load(env)
+
+    assert config.sharing is True
+    assert config.friends == {"leo": "soleil42", "sam": "banane:77"}
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        "IA_MOT_DE_PASSE=court\n",
+        "IA_AMIS=leo:soleil42\n",
+        "IA_MOT_DE_PASSE=motdepasse-admin\nIA_AMIS=admin:soleil42\n",
+        "IA_MOT_DE_PASSE=motdepasse-admin\nIA_AMIS=léo:soleil42\n",
+        "IA_MOT_DE_PASSE=motdepasse-admin\nIA_AMIS=leo:123\n",
+    ],
+)
+def test_invalid_sharing_settings_are_explained(monkeypatch, tmp_path, content):
+    from mon_ia.config import Config
+
+    env = tmp_path / ".env"
+    env.write_text(content, encoding="utf-8")
+    isolated_environment(monkeypatch)
+
+    with pytest.raises(SystemExit):
+        Config.load(env)

@@ -41,6 +41,7 @@ async function errorMessage(response) {
 
 async function api(path, options = {}) {
   const response = await fetch(path, { headers: { "Content-Type": "application/json" }, ...options });
+  if (response.status === 401) showLogin();
   if (!response.ok) throw new Error(await errorMessage(response));
   return response.json();
 }
@@ -130,6 +131,7 @@ const state = {
   streaming: false,
   controller: null,
   pulling: false,
+  owner: true,
 };
 
 const ui = {
@@ -381,7 +383,7 @@ async function send(forcedText) {
   const attachments = state.attachments;
   if (!text && !attachments.length) return;
   if (!ui.modelSelect.value) {
-    openModels("Il faut d'abord installer un modèle : choisis-en un ci-dessous.");
+    openModels(state.owner ? "Il faut d'abord installer un modèle : choisis-en un ci-dessous." : "Aucun modèle n'est installé pour l'instant.");
     return;
   }
 
@@ -418,6 +420,7 @@ async function send(forcedText) {
     });
     if (!response.ok) {
       // Rien n'a été enregistré : on rend le message pour pouvoir le corriger.
+      if (response.status === 401) showLogin();
       const message = await errorMessage(response);
       userNode.remove();
       view.root.remove();
@@ -668,7 +671,11 @@ async function loadModels() {
   }
   renderModelSelect();
   if (data.ok && !data.models.length) {
-    openModels("Aucun modèle n'est installé pour l'instant. Choisis-en un ci-dessous pour donner un cerveau à ton IA (le téléchargement peut prendre quelques minutes).");
+    openModels(
+      state.owner
+        ? "Aucun modèle n'est installé pour l'instant. Choisis-en un ci-dessous pour donner un cerveau à ton IA (le téléchargement peut prendre quelques minutes)."
+        : "Aucun modèle n'est encore installé sur l'ordinateur qui héberge cette IA. Demande à ton pote d'en télécharger un.",
+    );
   }
 }
 
@@ -951,7 +958,75 @@ $("#memory-save").addEventListener("click", (event) => {
   saveMemory();
 });
 
+// ---------- Connexion (mode partage) ----------
+
+function showLogin() {
+  const dialog = $("#login-dialog");
+  if (dialog.open) return;
+  dialog.showModal();
+  $("#login-pseudo").focus();
+}
+
+$("#login-dialog").addEventListener("cancel", (event) => event.preventDefault());
+
+$("#login-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const error = $("#login-error");
+  const button = $("#login-submit");
+  button.disabled = true;
+  try {
+    const response = await fetch("/api/connexion", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pseudo: $("#login-pseudo").value, password: $("#login-password").value }),
+    });
+    if (!response.ok) throw new Error(await errorMessage(response));
+    saved.set("conversation", null);
+    location.reload();
+  } catch (failure) {
+    error.textContent = networkMessage(failure);
+    error.hidden = false;
+    button.disabled = false;
+  }
+});
+
+$("#logout").addEventListener("click", async () => {
+  try {
+    await fetch("/api/deconnexion", { method: "POST" });
+  } finally {
+    saved.set("conversation", null);
+    location.reload();
+  }
+});
+
+function applySession(session) {
+  state.owner = session.owner;
+  $("#open-profile").hidden = !state.owner;
+  $("#pull-section").hidden = !state.owner;
+  if (session.sharing) {
+    $("#account").hidden = false;
+    $("#account-name").textContent = state.owner ? "👑 admin" : `👤 ${session.user}`;
+  }
+  if (!state.owner) {
+    $("#privacy").textContent = "🔒 Tes conversations sont séparées de celles des autres.";
+    $("#welcome-text").textContent = "Je tourne sur l'ordinateur d'un pote, pas dans le cloud : gratuite et sans pub.";
+  }
+}
+
 async function init() {
+  try {
+    const session = await api("/api/session");
+    if (session.sharing && !session.user) {
+      setStatus("", "Connexion requise");
+      showLogin();
+      return;
+    }
+    applySession(session);
+  } catch (error) {
+    setStatus("error", "Serveur injoignable");
+    showBanner(networkMessage(error), () => location.reload());
+    return;
+  }
   try {
     const infos = await api("/api/infos");
     applyName(infos.name);

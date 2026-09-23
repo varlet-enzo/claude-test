@@ -18,4 +18,5 @@ fi
 PORT=$(grep -E '^[[:space:]]*IA_PORT=' .env | cut -d= -f2 | tr -d '[:space:]')
 echo "Envoie à tes potes l'adresse en https://…trycloudflare.com qui va s'afficher."
 echo "Garde ce terminal et celui de lancer.sh ouverts : les fermer coupe le partage."
-exec cloudflared tunnel --url "http://localhost:${PORT:-8000}"
+# http2 plutôt que quic (UDP), souvent bloqué par les box, antivirus et réseaux d'école.
+exec cloudflared tunnel --protocol http2 --url "http://localhost:${PORT:-8000}"

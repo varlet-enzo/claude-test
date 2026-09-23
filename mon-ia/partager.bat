@@ -16,7 +16,8 @@ echo Creation du lien de partage...
 echo Envoie a tes potes l'adresse en https://...trycloudflare.com qui va s'afficher dans un cadre.
 echo Garde cette fenetre ET celle de lancer.bat ouvertes : les fermer coupe le partage.
 echo.
-cloudflared tunnel --url http://localhost:%PORT%
+rem http2 plutot que quic (UDP), souvent bloque par les box, antivirus et reseaux d'ecole.
+cloudflared tunnel --protocol http2 --url http://localhost:%PORT%
 pause
 exit /b
 
